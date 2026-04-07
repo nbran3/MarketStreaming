@@ -1,0 +1,6 @@
+kafka-python-ng
+psycopg2-binary
+Faker
+yfinance
+pandas
+numpy
