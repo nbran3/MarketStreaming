@@ -2,26 +2,43 @@ import json
 import psycopg2
 import time
 from kafka import KafkaConsumer
+import os
+
+KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:29092")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+POSTGRES_USER = os.getenv("POSTGRES_USER", "noahbrannon")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "")
+
+def get_consumer(retries=10, delay=5):
+    for attempt in range(retries):
+        try:
+            return KafkaConsumer(
+                "marketdata",
+                bootstrap_servers=[KAFKA_BOOTSTRAP_SERVERS],
+                value_deserializer=lambda x: json.loads(x.decode("utf-8")),
+                auto_offset_reset="earliest",
+                enable_auto_commit=True,
+                group_id="marketdata-consumers"
+            )
+        except Exception as e:
+            print(f"Kafka not ready, attempt {attempt + 1}/{retries}. Retrying in {delay}s... ({e})")
+            time.sleep(delay)
+    raise Exception("Could not connect to Kafka after multiple retries")
 
 def get_db_connection():
     return psycopg2.connect(
-        host="localhost",
+        host=POSTGRES_HOST,
         database="noahbrannon",
-        port="5432"
+        port="5432",
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD
     )
 
-consumer = KafkaConsumer(
-    "marketdata",
-    bootstrap_servers=["broker:9092"],
-    value_deserializer=lambda x: json.loads(x.decode("utf-8")),
-    auto_offset_reset="earliest",
-    enable_auto_commit=True,
-    group_id="marketdata-consumers"
-)
 
 def insert_trade_data():
     conn = get_db_connection()
     cursor = conn.cursor()
+    consumer = get_consumer()
 
     print("Consumer state: Inserting trade data into database...")
 
