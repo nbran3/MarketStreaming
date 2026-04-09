@@ -25,7 +25,17 @@ def generate_trade_ticker(records=10):
     for _ in range(records):
         symbol = random.choice(symbols)
 
-        stock_dict[symbol] *= (1 + random.uniform(-0.01, 0.01))
+        BASE_PRICES = stock_dict.copy()  
+
+        change = random.gauss(0, 0.002)  
+        change = max(-0.005, min(0.005, change))  
+
+        new_price = stock_dict[symbol] * (1 + change)
+
+        base = BASE_PRICES[symbol]
+        new_price = max(base * 0.90, min(base * 1.10, new_price))
+
+        stock_dict[symbol] = round(new_price, 2)
 
         yield {
             "trade_id": str(uuid.uuid4()),

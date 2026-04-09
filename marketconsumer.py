@@ -16,7 +16,7 @@ def get_consumer(retries=10, delay=5):
                 "marketdata",
                 bootstrap_servers=[KAFKA_BOOTSTRAP_SERVERS],
                 value_deserializer=lambda x: json.loads(x.decode("utf-8")),
-                auto_offset_reset="earliest",
+                auto_offset_reset="latest",
                 enable_auto_commit=True,
                 group_id="marketdata-consumers"
             )
@@ -49,9 +49,10 @@ def insert_trade_data():
             print(f"Received trade: {trade}")
 
             insert_query = """
-                INSERT INTO marketdata (trade_id, symbol, price, quantity, side, ts_event, ts_producer, ts_consumer_received)
-                VALUES (%s, %s, %s, %s, %s, to_timestamp(%s), to_timestamp(%s), to_timestamp(%s))
-            """
+    INSERT INTO marketdata (trade_id, symbol, price, quantity, side, ts_event, ts_producer, ts_consumer_received)
+    VALUES (%s, %s, %s, %s, %s, to_timestamp(%s), to_timestamp(%s), to_timestamp(%s))
+    ON CONFLICT (trade_id) DO NOTHING
+"""
             cursor.execute(insert_query, (
                 trade["trade_id"],
                 trade["symbol"],
@@ -66,6 +67,9 @@ def insert_trade_data():
             print(f"Inserted trade {trade['trade_id']} into database.")
     except Exception as e:
         print(f"Error: {e}")
+    except psycopg2.Error.UniqueViolation:
+        print(f"Duplicate trade_id detected. Skipping insertion for {trade['trade_id']}.")
+        conn.rollback()
     finally:
         cursor.close()
         conn.close()
