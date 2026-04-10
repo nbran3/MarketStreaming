@@ -30,3 +30,6 @@ This Streamlit dashboard shows the quantity of each stock for buy and sell optio
 This Streamlit dashboard shows latency metrics for the pipeline. It shows the average end-to-end latency, average consumer latency, and average producer latency for each trade. It also shows the throughput (trades per second) and Jitter(standard deviation of the end-to-end latency). Additionally, this dashboard shows the 50th, 75th, 90th, and 99th percentiles for the end-to-end metric. Finally, this dashboard has a rolling average of the 99th percentile on a graph. I think what is interesting is how much worse the 99th percentile is compared to the 95th. To me, that shows that something is stalling, whether it be Python, Postgres, or even Docker, which is honestly to be expected in a local environment. The average latency is only 11 ms, which is still very good. 
 Here is an image:
 ![Live Latency Dashboard](images/latency.png)
+
+
+Video Link of the Pipeline in action: https://youtu.be/CciGg-xHmds
